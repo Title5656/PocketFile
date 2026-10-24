@@ -1,0 +1,47 @@
+{
+  "name": "pocketfile",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "predev": "node scripts/copy-ocr-assets.mjs",
+    "test": "vitest run",
+    "dev": "vite",
+    "prebuild": "node scripts/copy-ocr-assets.mjs",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit -p tsconfig.app.json"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "type": "module",
+  "private": "true",
+  "dependencies": {
+    "exifr": "^7.1.3",
+    "heic2any": "^0.0.4",
+    "jszip": "^3.10.2",
+    "lucide-react": "^1.61.0",
+    "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^6.4.299",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "tesseract.js": "^7.0.0"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "jsdom": "^30.1.3",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.5",
+    "vite-plugin-pwa": "^2.0.0",
+    "vitest": "^5.0.5"
+  }
+}
