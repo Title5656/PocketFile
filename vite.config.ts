@@ -26,7 +26,7 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,mjs,css,html,svg,png,webmanifest,woff2,wasm}'],
+        globPatterns: ['**/*.{js,mjs,css,html,svg,png,webmanifest,woff2}'],
         maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
         navigateFallback: 'index.html',
       },
@@ -34,6 +34,6 @@ export default defineConfig({
   ],
   build: {
     target: 'es2022',
-    sourcemap: true,
+    sourcemap: false,
   },
 });

@@ -1,6 +1,7 @@
-import { useId, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import { FileImage, UploadCloud } from 'lucide-react';
+import { IMAGE_BYTES, PDF_BYTES, validateFile } from '../lib/validation';
 
 interface FileDropzoneProps {
   accept: string;
@@ -39,30 +40,42 @@ export function FileDropzone({
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
   const [error, setError] = useState('');
+  const [validating, setValidating] = useState(false);
+  const generation = useRef(0);
+  useEffect(()=>{generation.current+=1;setValidating(false);return()=>{generation.current+=1;};},[disabled]);
 
-  const receiveFiles = (fileList: FileList | File[]) => {
+  const receiveFiles = async (fileList: FileList | File[]) => {
+    if (disabled || validating) return;
+    const run=++generation.current;
     const files = Array.from(fileList);
     setError('');
     if (files.length === 0) return;
     const selected = multiple ? files : files.slice(0, 1);
     const accepted: File[] = [];
     const rejected: string[] = [];
+    if(selected.length>20){setError('เลือกได้ไม่เกิน 20 ไฟล์ต่อครั้ง');return;}
+    setValidating(true);
     for (const file of selected) {
       if (file.size === 0) rejected.push(`${file.name}: ไฟล์ว่าง`);
-      else if (maxSizeBytes && file.size > maxSizeBytes) rejected.push(`${file.name}: ไฟล์ใหญ่เกินกำหนด`);
+      else if (file.size > (maxSizeBytes ?? (accept.includes('application/pdf')?PDF_BYTES:IMAGE_BYTES))) rejected.push(`${file.name}: ไฟล์ใหญ่เกินกำหนด (${accept.includes('application/pdf')?50:25} MB ต่อไฟล์)`);
       else if (!matchesAccept(file, accept)) rejected.push(`${file.name}: รูปแบบไฟล์ไม่รองรับ`);
-      else accepted.push(file);
+      else {
+        try {await validateFile(file, accept.includes('application/pdf')?'pdf':'image'); accepted.push(file);}
+        catch(reason){rejected.push(`${file.name}: ${reason instanceof Error?reason.message:'อ่านไฟล์ไม่ได้'}`);}
+      }
     }
+    if(run!==generation.current)return;
+    setValidating(false);
     if (accepted.length > 0) onFiles(accepted);
     if (rejected.length > 0) {
       setError(accepted.length > 0
         ? `ข้าม ${rejected.length} ไฟล์ที่ว่าง ใหญ่เกินไป หรือรูปแบบไม่รองรับ`
-        : 'ไฟล์นี้ไม่ได้อยู่ในรูปแบบที่รองรับ หรือเป็นไฟล์ว่าง');
+        : `ไฟล์นี้ไม่ได้อยู่ในรูปแบบที่รองรับ หรือเป็นไฟล์ว่าง • ${rejected.join('; ')}`);
     }
   };
 
   const handleInput = (event: ChangeEvent<HTMLInputElement>) => {
-    if (event.currentTarget.files) receiveFiles(event.currentTarget.files);
+    if (event.currentTarget.files) void receiveFiles(event.currentTarget.files);
     event.currentTarget.value = '';
   };
 
@@ -79,7 +92,7 @@ export function FileDropzone({
         id={inputId}
         type="file"
         aria-label="เลือกไฟล์"
-        disabled={disabled}
+        disabled={disabled || validating}
         accept={accept}
         multiple={multiple}
         onChange={handleInput}
@@ -91,7 +104,7 @@ export function FileDropzone({
         <p>{description}</p>
       </div>
       <div className="dropzone-actions">
-        <button className="button button--primary" type="button" disabled={disabled} onClick={() => inputRef.current?.click()}>
+        <button className="button button--primary" type="button" disabled={disabled || validating} onClick={() => inputRef.current?.click()}>
           <FileImage size={16} /> เลือกไฟล์
         </button>
         {!compact ? <small>หรือวางไฟล์ไว้ที่นี่</small> : null}

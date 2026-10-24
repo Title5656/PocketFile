@@ -401,3 +401,13 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: .01ms !important; }
 }
+
+/* Personal QA: usable controls on small touch screens, without changing the visual identity. */
+@media(max-width:600px){
+ .icon-button,.batch-row .icon-button,.pdf-page-actions .icon-button,.pdf-order-actions .icon-button{min-width:40px;min-height:40px;}
+ .tool-field>span,.tool-hint,.tool-check,.batch-name small,.tool-file-line span{font-size:12px;}
+ .button{min-height:42px;} .batch-row{flex-wrap:wrap;} .batch-name{min-width:0;overflow-wrap:anywhere;}
+ .tool-action-row{flex-wrap:wrap;} .tool-controls{min-width:0;} .tool-field input,.tool-field select{min-width:0;max-width:100%;}
+}
+.pdf-sign-overlay[aria-disabled="true"]{pointer-events:none;}
+.pdf-sign-overlay:focus-visible{outline:3px solid #5184ec;}

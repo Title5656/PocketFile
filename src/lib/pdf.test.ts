@@ -122,11 +122,11 @@ describe('PDF file operations', () => {
       width: 200,
       height: 300,
       rotation: 90,
-      convertToPdfPoint: (x: number, y: number): [number, number] => [y, 200 - x],
+      convertToPdfPoint: (x: number, y: number): [number, number] => [y, x],
     };
 
     expect(getPdfSignatureBounds(viewport, { x: 0.1, y: 0.2, width: 0.4 }, 0.5)).toEqual({
-      x: 40, y: 120, width: 80, height: 40, rotation: 90,
+      x: 100, y: 20, width: 80, height: 40, rotation: 90,
     });
   });
 
@@ -151,7 +151,7 @@ describe('PDF file operations', () => {
     const signature = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/NcAAAAAASUVORK5CYII=';
     const viewport = {
       width: 200, height: 300, rotation: 90,
-      convertToPdfPoint: (x: number, y: number): [number, number] => [y, 200 - x],
+      convertToPdfPoint: (x: number, y: number): [number, number] => [y, x],
     };
 
     const output = await addPdfSignatures(input, [{ pageIndex: 0, x: 0.1, y: 0.2, width: 0.4, dataUrl: signature, imageWidth: 600, imageHeight: 180 }], new Map([[0, viewport]]));

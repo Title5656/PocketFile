@@ -13,7 +13,7 @@ export function AppHeader({ theme, onThemeToggle, onSettings, onHome }: AppHeade
     <header className="app-header">
       <div className="header-inner">
         <button className="brand-button" type="button" onClick={onHome} aria-label="PocketFile หน้าแรก">
-          <img src="/pocketfile/pocketfile.svg" alt="" className="brand-mark" />
+          <img src={`${import.meta.env.BASE_URL}pocketfile.svg`} alt="" className="brand-mark" />
           <span className="brand-copy">
             <strong>PocketFile</strong>
             <small>เครื่องมือไฟล์ส่วนตัว</small>

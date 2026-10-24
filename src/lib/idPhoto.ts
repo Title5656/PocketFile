@@ -1,6 +1,7 @@
 import type { CropTransform, ImageExportOptions, PhotoSize } from '../types';
 import { decodeImage } from './images';
 import { setImageDpi } from './imageDpi';
+import { checkCancelled } from './validation';
 
 const MAX_OUTPUT_SIDE = 12_000;
 const MAX_OUTPUT_PIXELS = 40_000_000;
@@ -9,6 +10,7 @@ export function getPhotoPixelSize(widthInches: number, heightInches: number, dpi
   if (![widthInches, heightInches, dpi].every((value) => Number.isFinite(value) && value > 0)) {
     throw new Error('Photo size and DPI must be positive');
   }
+  if (widthInches < 0.2 || widthInches > 8 || heightInches < 0.2 || heightInches > 8) throw new Error('ขนาดรูปต้องอยู่ระหว่าง 0.2–8 นิ้ว');
   const width = Math.round(widthInches * dpi);
   const height = Math.round(heightInches * dpi);
   if (width > MAX_OUTPUT_SIDE || height > MAX_OUTPUT_SIDE || width * height > MAX_OUTPUT_PIXELS) {
@@ -62,13 +64,16 @@ export async function renderIdPhoto(
   dpi: number,
   format: 'image/jpeg' | 'image/png',
   backgroundColor = '#ffffff',
+  signal?: AbortSignal,
 ): Promise<Blob> {
+  checkCancelled(signal);
   const outputSize = getPhotoPixelSize(size.widthInches, size.heightInches, dpi);
   const decoded = await decodeImage(file);
   const canvas = document.createElement('canvas');
   canvas.width = outputSize.width;
   canvas.height = outputSize.height;
   try {
+    checkCancelled(signal);
     const context = canvas.getContext('2d', { alpha: format === 'image/png' });
     if (!context) throw new Error('Canvas image processing is not available in this browser');
     if (format === 'image/jpeg') {
@@ -77,7 +82,9 @@ export async function renderIdPhoto(
     }
     const draw = getCropDrawRect(decoded.width, decoded.height, canvas.width, canvas.height, crop);
     context.drawImage(decoded.image, draw.x, draw.y, draw.width, draw.height);
-    return await setImageDpi(await encodeCanvas(canvas, format, 0.94), dpi);
+    const encoded=await encodeCanvas(canvas, format, 0.94);
+    checkCancelled(signal);
+    return await setImageDpi(encoded, dpi);
   } finally {
     decoded.release();
     canvas.width = 0;

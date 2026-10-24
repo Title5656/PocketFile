@@ -3,6 +3,7 @@ import type {
   CompressionResult,
   ImageExportOptions,
 } from '../types';
+import { IMAGE_BYTES, checkCancelled, validateDimensions } from './validation';
 
 export interface DecodedImage {
   image: CanvasImageSource;
@@ -119,19 +120,23 @@ async function convertHeic(file: File): Promise<Blob> {
 
 export async function decodeImage(file: File): Promise<DecodedImage> {
   if (!file || file.size === 0) throw new Error('The selected image is empty');
+  if(file.size>IMAGE_BYTES)throw new Error('รูปภาพต้องไม่เกิน 25 MB');
   const heicInput = isHeic(file);
   if (file.type && !file.type.startsWith('image/') && !heicInput) throw new Error('Choose a supported image file');
 
+  let decoded: DecodedImage;
   try {
-    return await bitmapFromBlob(file);
+    decoded = await bitmapFromBlob(file);
   } catch {
     if (!heicInput) throw new Error('This browser cannot decode the selected image. Try JPG, PNG, or WebP.');
     try {
-      return await bitmapFromBlob(await convertHeic(file));
+      decoded = await bitmapFromBlob(await convertHeic(file));
     } catch {
       throw new Error('HEIC/HEIF decoding is not available in this browser. Convert the image to JPG first.');
     }
   }
+  try {validateDimensions(decoded.width, decoded.height);return decoded;}
+  catch(reason){decoded.release();throw reason;}
 }
 
 function makeCanvas(width: number, height: number): HTMLCanvasElement {
@@ -182,15 +187,19 @@ function paintImage(
   return canvas;
 }
 
-export async function exportImage(file: File, options: ImageExportOptions): Promise<Blob> {
+export async function exportImage(file: File, options: ImageExportOptions, signal?: AbortSignal): Promise<Blob> {
+  checkCancelled(signal);
   const decoded = await decodeImage(file);
   try {
+    checkCancelled(signal);
     const requestedWidth = options.width && options.width > 0 ? options.width : decoded.width;
     const requestedHeight = options.height && options.height > 0 ? options.height : decoded.height;
     const dimensions = fitDimensions(decoded.width, decoded.height, requestedWidth, requestedHeight, options.preserveAspect ?? true);
     const canvas = paintImage(decoded.image, dimensions.width, dimensions.height, options.format, options.backgroundColor);
     try {
-      return await encodeCanvas(canvas, options.format, normalizedQuality(options.quality));
+      const output=await encodeCanvas(canvas, options.format, normalizedQuality(options.quality));
+      checkCancelled(signal);
+      return output;
     } finally {
       canvas.width = 0;
       canvas.height = 0;
@@ -234,6 +243,7 @@ async function searchQuality(
           ? high
           : (low + high) / 2;
       const blob = await encodeCanvas(canvas, format, quality);
+      throwIfAborted(signal);
       candidates.push({ quality, blob });
       onProgress(Math.min(99, Math.round((progressBase + ((attempt + 1) / qualitySteps) * progressSpan) * 100)));
       if (format === 'image/png') break;

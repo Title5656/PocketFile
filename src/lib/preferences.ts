@@ -3,7 +3,7 @@ import type { Preferences, Theme, ToolId } from '../types';
 const STORAGE_KEY = 'pocketfile.preferences';
 const RECENT_LIMIT = 4;
 const VALID_TOOL_IDS = new Set<ToolId>([
-  'compress', 'convert', 'batch', 'id-photo', 'image-text', 'privacy',
+  'compress', 'convert', 'batch', 'id-photo',
   'merge-pdf', 'pages', 'sign', 'print-layout',
 ]);
 

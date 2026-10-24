@@ -1,4 +1,5 @@
 import type { PrintLayoutOptions, Rect } from '../types';
+import { PDF_BYTES, MAX_PDF_PAGES, MAX_BATCH_BYTES } from './validation';
 import { PDFDocument, degrees } from 'pdf-lib';
 
 const POINTS_PER_MM = 72 / 25.4;
@@ -105,6 +106,19 @@ export function getPrintLayoutPagePlacement(slot: Rect, width: number, height: n
   return { x, y, width: drawWidth, height: drawHeight, rotation: -rotation };
 }
 
+async function loadBoundedPdf(input:Uint8Array){
+ if(input.byteLength>PDF_BYTES)throw new Error('PDF ต้องไม่เกิน 50 MB');
+ const doc=await PDFDocument.load(input);
+ if(doc.getPageCount()>MAX_PDF_PAGES)throw new Error('PDF ต้องไม่เกิน 150 หน้า กรุณาแบ่งไฟล์ก่อน');
+ return doc;
+}
+async function verifiedSave(doc:PDFDocument,expected:number,isCancelled?:CancelCheck){
+ throwIfCancelled(isCancelled);
+ const bytes=await doc.save();throwIfCancelled(isCancelled);
+ const reopened=await PDFDocument.load(bytes);
+ if(reopened.getPageCount()!==expected||!expected)throw new Error('ตรวจสอบ PDF ผลลัพธ์ไม่ผ่าน');
+ throwIfCancelled(isCancelled);return bytes;
+}
 type CancelCheck = () => boolean;
 type PdfProgress = (progress: number) => void;
 
@@ -116,22 +130,25 @@ function throwIfCancelled(isCancelled?: CancelCheck): void {
 }
 
 export async function mergePdfBytes(inputs: Uint8Array[], onProgress?: PdfProgress, isCancelled?: CancelCheck): Promise<Uint8Array> {
+  if(inputs.length>10||inputs.reduce((n,b)=>n+b.byteLength,0)>MAX_BATCH_BYTES)throw new Error('รวมได้ไม่เกิน 10 ไฟล์ และ 100 MB');
   if (inputs.length < 2) throw new Error('Select at least two PDF files to merge');
   const output = await PDFDocument.create();
   for (const [index, input] of inputs.entries()) {
     throwIfCancelled(isCancelled);
-    const source = await PDFDocument.load(input);
+    const source = await loadBoundedPdf(input);
+    throwIfCancelled(isCancelled);
+    if(output.getPageCount()+source.getPageCount()>MAX_PDF_PAGES)throw new Error('ผลรวม PDF ต้องไม่เกิน 150 หน้า');
     const pages = await output.copyPages(source, source.getPageIndices());
     pages.forEach((page) => output.addPage(page));
     onProgress?.(Math.round(((index + 1) / inputs.length) * 100));
   }
   throwIfCancelled(isCancelled);
-  return output.save();
+  return verifiedSave(output, output.getPageCount(), isCancelled);
 }
 
 export async function exportPdfPages(input: Uint8Array, indices: number[], isCancelled?: CancelCheck): Promise<Uint8Array> {
   if (indices.length === 0) throw new Error('Select at least one PDF page');
-  const source = await PDFDocument.load(input);
+  const source = await loadBoundedPdf(input);
   if (indices.some((index) => !Number.isInteger(index) || index < 0 || index >= source.getPageCount())) {
     throw new Error('A selected page is outside the PDF');
   }
@@ -141,7 +158,7 @@ export async function exportPdfPages(input: Uint8Array, indices: number[], isCan
   const pages = await output.copyPages(source, indices);
   pages.forEach((page) => output.addPage(page));
   throwIfCancelled(isCancelled);
-  return output.save();
+  return verifiedSave(output, output.getPageCount(), isCancelled);
 }
 
 export async function createPrintLayoutPdf(
@@ -151,7 +168,7 @@ export async function createPrintLayoutPdf(
   isCancelled?: CancelCheck,
 ): Promise<Uint8Array> {
   const layout = getSheetLayout(options.pagesPerSheet, options.orientation, options.marginMm);
-  const source = await PDFDocument.load(input);
+  const source = await loadBoundedPdf(input);
   let embedInput = input;
   let addedBlankPageContents = false;
   for (const page of source.getPages()) {
@@ -169,7 +186,8 @@ export async function createPrintLayoutPdf(
   for (let index = 0; index < pages.length; index += 1) {
     throwIfCancelled(isCancelled);
     if (!sheet || (index > 0 && slotIndex === 0)) sheet = output.addPage([layout.width, layout.height]);
-    const page = await output.embedPage(pages[index]);
+    const box=pages[index].getCropBox();
+    const page = await output.embedPage(pages[index],{left:box.x,bottom:box.y,right:box.x+box.width,top:box.y+box.height});
     const slot = layout.slots[slotIndex];
     const placement = getPrintLayoutPagePlacement(slot, page.width, page.height, pages[index].getRotation().angle);
     sheet.drawPage(page, { ...placement, rotate: degrees(placement.rotation) });
@@ -209,20 +227,11 @@ export function getPdfSignatureBounds(
   const screenHeight = screenWidth * imageAspectRatio;
   const left = Math.max(0, Math.min(viewport.width - screenWidth, placement.x * viewport.width));
   const top = Math.max(0, Math.min(viewport.height - screenHeight, placement.y * viewport.height));
-  const points = [
-    viewport.convertToPdfPoint(left, top),
-    viewport.convertToPdfPoint(left + screenWidth, top),
-    viewport.convertToPdfPoint(left, top + screenHeight),
-    viewport.convertToPdfPoint(left + screenWidth, top + screenHeight),
-  ];
-  const xs = points.map(([x]) => x);
-  const ys = points.map(([, y]) => y);
-  const minX = Math.min(...xs); const maxX = Math.max(...xs);
-  const minY = Math.min(...ys); const maxY = Math.max(...ys);
+  const [originX, originY] = viewport.convertToPdfPoint(left, top + screenHeight);
   const rotation = ((viewport.rotation % 360) + 360) % 360;
   return {
-    x: (minX + maxX - screenWidth) / 2,
-    y: (minY + maxY - screenHeight) / 2,
+    x: originX,
+    y: originY,
     width: screenWidth,
     height: screenHeight,
     rotation,
@@ -252,7 +261,7 @@ export async function addPdfSignatures(
   viewports: ReadonlyMap<number, PdfViewportGeometry>,
   isCancelled?: CancelCheck,
 ): Promise<Uint8Array> {
-  const output = await PDFDocument.load(input);
+  const output = await loadBoundedPdf(input);
   for (const placement of placements) {
     throwIfCancelled(isCancelled);
     const viewport = viewports.get(placement.pageIndex);

@@ -34,7 +34,7 @@ describe('local preferences', () => {
       theme: 'dark',
       recentTools: ['merge-pdf', 'compress', 'merge-pdf', 'not-a-tool', 'image-text', 'sign', 'batch'],
       files: ['should never persist'],
-    })))).toEqual({ theme: 'dark', recentTools: ['merge-pdf', 'compress', 'image-text', 'sign'] });
+    })))).toEqual({ theme: 'dark', recentTools: ['merge-pdf', 'compress', 'sign', 'batch'] });
   });
 
   it('stores only theme and recent tool IDs', () => {

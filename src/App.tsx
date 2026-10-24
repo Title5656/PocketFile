@@ -1,5 +1,6 @@
-import { lazy, Suspense, useMemo, useState } from 'react';
+import { lazy, Suspense, useMemo, useState, useEffect, useRef } from 'react';
 import { FileCheck2, Search, ShieldCheck, Sparkles, X } from 'lucide-react';
+import { Modal } from './components/Modal';
 import { AppHeader } from './components/AppHeader';
 import { ConfirmDialog } from './components/ConfirmDialog';
 import { ToolCard } from './components/ToolCard';
@@ -40,12 +41,46 @@ function matchesTool(toolId: ToolId, query: string): boolean {
 export default function App() {
   const [preferences, setPreferences] = useState<Preferences>(loadPreferences);
   const [query, setQuery] = useState('');
-  const [activeToolId, setActiveToolId] = useState<ToolId | null>(null);
+  const fromHash=()=>{const id=window.location.hash.slice(1) as ToolId;return toolById.has(id)?id:null;};
+  const [activeToolId, setActiveToolId] = useState<ToolId | null>(fromHash);
+  const [pendingTool,setPendingTool]=useState<ToolId|null>(null);
+  const searchRef=useRef<HTMLInputElement>(null);
+  const activeRef=useRef<ToolId|null>(activeToolId);
+  const workRef=useRef(false);
+  const historyIndex=useRef(0);
+  const restoreIndex=useRef<number|null>(null);
+  const pendingIndex=useRef<number|null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [confirmClearRecent, setConfirmClearRecent] = useState(false);
   const [hasToolWork, setHasToolWork] = useState(false);
   const [confirmLeaveTool, setConfirmLeaveTool] = useState(false);
 
+  activeRef.current=activeToolId;workRef.current=hasToolWork;
+  useEffect(()=>{
+    history.replaceState({pocketfileIndex:historyIndex.current},'',window.location.href);
+    const hash=()=>{
+      const next=fromHash();
+      const index=typeof history.state?.pocketfileIndex==='number'?history.state.pocketfileIndex:historyIndex.current+1;
+      if(restoreIndex.current!==null){
+        if(index===restoreIndex.current)restoreIndex.current=null;
+        return;
+      }
+      if(next===activeRef.current)return;
+      if(workRef.current){
+        pendingIndex.current=index;setPendingTool(next);setConfirmLeaveTool(true);
+        restoreIndex.current=historyIndex.current;
+        history.go(historyIndex.current-index);
+      }else{
+        historyIndex.current=index;
+        history.replaceState({pocketfileIndex:index},'',window.location.href);
+        activeRef.current=next;setActiveToolId(next);setHasToolWork(false);
+      }
+    };
+    const before=(event:BeforeUnloadEvent)=>{if(workRef.current){event.preventDefault();event.returnValue='';}};
+    window.addEventListener('popstate',hash);window.addEventListener('beforeunload',before);
+    return()=>{window.removeEventListener('popstate',hash);window.removeEventListener('beforeunload',before);};
+  },[]);
+  useEffect(()=>{const shortcut=(event:KeyboardEvent)=>{if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='k'&&searchRef.current){event.preventDefault();searchRef.current.focus();searchRef.current.select();}};window.addEventListener('keydown',shortcut);return()=>window.removeEventListener('keydown',shortcut);},[]);
   const activeTool = activeToolId ? toolById.get(activeToolId) : undefined;
   const visibleTools = useMemo(
     () => toolCatalog.filter((tool) => matchesTool(tool.id, query)),
@@ -61,10 +96,16 @@ export default function App() {
     savePreferences(next);
   };
 
+  const pushTool = (id:ToolId|null) => {
+    historyIndex.current+=1;
+    history.pushState({pocketfileIndex:historyIndex.current},'',id?`#${id}`:window.location.pathname+window.location.search);
+  };
+
   const openTool = (toolId: ToolId) => {
     const recentTools = [toolId, ...preferences.recentTools.filter((id) => id !== toolId)].slice(0, 4);
     updatePreferences({ ...preferences, recentTools });
     setHasToolWork(false);
+    pushTool(toolId);
     setActiveToolId(toolId);
   };
 
@@ -78,14 +119,21 @@ export default function App() {
   };
 
   const leaveTool = () => {
-    setActiveToolId(null);
+    workRef.current=false;activeRef.current=pendingTool;
+    setActiveToolId(pendingTool);
+    if(pendingIndex.current!==null){
+      const destination=pendingIndex.current;pendingIndex.current=null;
+      restoreIndex.current=destination;history.go(destination-historyIndex.current);historyIndex.current=destination;
+    }else pushTool(pendingTool);
     setQuery('');
     setHasToolWork(false);
     setConfirmLeaveTool(false);
   };
   const returnHome = () => {
+    pendingIndex.current=null;
+    setPendingTool(null);
     if (hasToolWork) { setConfirmLeaveTool(true); return; }
-    leaveTool();
+    setActiveToolId(null);pushTool(null);setQuery('');setHasToolWork(false);
   };
 
   const renderGroup = (category: ToolCategory, title: string, label: string) => {
@@ -133,20 +181,22 @@ export default function App() {
               <label className="search-box">
                 <Search size={19} aria-hidden="true" />
                 <input
+                  ref={searchRef}
+                  onKeyDown={e=>{if(e.key==='Escape')setQuery('');}}
                   type="search"
                   aria-label="ค้นหาเครื่องมือ"
-                  placeholder="ลองค้นหา เช่น OCR, บีบอัดรูป..."
+                  placeholder="ลองค้นหา เช่น PDF, บีบอัดรูป..."
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
                 />
-                {query ? <button type="button" aria-label="ล้างคำค้นหา" onClick={() => setQuery('')}><X size={17} /></button> : <kbd>⌘ K</kbd>}
+                {query ? <button type="button" aria-label="ล้างคำค้นหา" onClick={() => setQuery('')}><X size={17} /></button> : <kbd>Ctrl / ⌘ K</kbd>}
               </label>
               <div className="hero-trust"><ShieldCheck size={15} /><span>ไฟล์จะอยู่บนอุปกรณ์ของคุณ</span></div>
             </div>
             <div className="hero-art" aria-hidden="true">
               <div className="hero-art-orbit orbit-one" />
               <div className="hero-art-orbit orbit-two" />
-              <div className="hero-art-main"><img src="/pocketfile/pocketfile.svg" alt="" /></div>
+              <div className="hero-art-main"><img src={`${import.meta.env.BASE_URL}pocketfile.svg`} alt="" /></div>
               <div className="floating-file floating-file--top"><span className="floating-dot" /> <span>image.jpg</span><b>−42%</b></div>
               <div className="floating-file floating-file--bottom"><FileCheck2 size={19} /><span>พร้อมดาวน์โหลด</span></div>
               <div className="hero-art-sparkle sparkle-a">✦</div><div className="hero-art-sparkle sparkle-b">✧</div>
@@ -190,8 +240,7 @@ export default function App() {
       )}
 
       {showSettings ? (
-        <div className="dialog-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setShowSettings(false); }}>
-          <section className="settings-dialog" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+        <Modal className="settings-dialog" labelledBy="settings-title" onClose={()=>setShowSettings(false)}>
             <div className="settings-dialog-head">
               <div><p className="eyebrow">YOUR PREFERENCES</p><h2 id="settings-title">ตั้งค่า PocketFile</h2></div>
               <button className="icon-button" type="button" onClick={() => setShowSettings(false)} aria-label="ปิดหน้าต่าง"><X size={18} /></button>
@@ -209,8 +258,7 @@ export default function App() {
             </div>
             <div className="settings-privacy"><ShieldCheck size={18} /><p>ไฟล์ของคุณทำงานในอุปกรณ์นี้ PocketFile ไม่เก็บไฟล์ รูปภาพ หรือเอกสารไว้ในบัญชีหรือเซิร์ฟเวอร์</p></div>
             <button className="button button--primary settings-done" type="button" onClick={() => setShowSettings(false)}>เรียบร้อย</button>
-          </section>
-        </div>
+        </Modal>
       ) : null}
 
       {confirmClearRecent ? (

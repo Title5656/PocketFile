@@ -12,11 +12,11 @@ export function formatBytes(bytes: number): string {
   return `${Number.isInteger(rounded) ? rounded.toFixed(0) : rounded.toFixed(1)} ${units[unitIndex]}`;
 }
 
-export function outputFileName(name: string, extension: string): string {
+export function outputFileName(name: string, extension: string, operation = ''): string {
   const safeName = name.split(/[\\/]/).pop()?.trim() || 'PocketFile';
   const safeExtension = extension.replace(/^\./, '').replace(/[^a-z0-9]/gi, '').toLowerCase() || 'file';
   const baseName = safeName.replace(/\.[^./\\]+$/, '') || 'PocketFile';
-  return `${baseName}.${safeExtension}`;
+  return `${baseName.replace(/[\x00-\x1f\x7f]/g, '')}${operation ? `-${operation}` : ''}.${safeExtension}`;
 }
 
 export function extensionForMime(type: string): string {

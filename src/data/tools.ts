@@ -6,8 +6,6 @@ import {
   Images,
   LayoutGrid,
   PenLine,
-  ScanText,
-  ShieldCheck,
   UserRound,
 } from 'lucide-react';
 import type { ToolId, ToolMeta } from '../types';
@@ -36,18 +34,6 @@ export const toolCatalog: ToolMeta[] = [
     description: 'ครอปภาพ เลือกขนาด และกำหนด DPI ก่อนส่งออก',
     keywords: ['photo', 'passport', 'crop', 'dpi', 'รูปถ่าย', 'ติดบัตร'],
     icon: UserRound, tint: 'sky',
-  },
-  {
-    id: 'image-text', category: 'image', title: 'ดึงข้อความจากภาพ',
-    description: 'อ่านข้อความภาษาไทยและอังกฤษด้วย OCR ในเบราว์เซอร์',
-    keywords: ['ocr', 'text', 'recognition', 'thai', 'english', 'ข้อความ'],
-    icon: ScanText, tint: 'butter',
-  },
-  {
-    id: 'privacy', category: 'image', title: 'ล้างข้อมูลรูปภาพ',
-    description: 'ตรวจข้อมูลภาพ ลบ EXIF และปิดทับข้อมูลส่วนตัว',
-    keywords: ['privacy', 'exif', 'metadata', 'gps', 'redact', 'ข้อมูล'],
-    icon: ShieldCheck, tint: 'rose',
   },
   {
     id: 'merge-pdf', category: 'pdf', title: 'รวมไฟล์ PDF',

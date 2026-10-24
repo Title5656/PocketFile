@@ -5,8 +5,6 @@ export type ToolId =
   | 'convert'
   | 'batch'
   | 'id-photo'
-  | 'image-text'
-  | 'privacy'
   | 'merge-pdf'
   | 'pages'
   | 'sign'
@@ -61,19 +59,6 @@ export interface CropTransform {
 export interface PhotoSize {
   widthInches: number;
   heightInches: number;
-}
-
-export interface RedactionRect {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-
-export interface MetadataItem {
-  label: string;
-  value: string;
-  sensitive?: boolean;
 }
 
 export interface PrintLayoutOptions {
