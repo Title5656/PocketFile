@@ -1,4 +1,4 @@
-import type { Preferences, Theme, ToolId } from '../types';
+import type { Preferences, ToolId } from '../types';
 
 const STORAGE_KEY = 'pocketfile.preferences';
 const RECENT_LIMIT = 4;
@@ -7,11 +7,7 @@ const VALID_TOOL_IDS = new Set<ToolId>([
   'merge-pdf', 'pages', 'sign', 'print-layout',
 ]);
 
-const defaults: Preferences = { theme: 'light', recentTools: [] };
-
-function isTheme(value: unknown): value is Theme {
-  return value === 'light' || value === 'dark';
-}
+const defaults: Preferences = { recentTools: [] };
 
 function cleanRecentTools(value: unknown): ToolId[] {
   if (!Array.isArray(value)) return [];
@@ -34,7 +30,6 @@ export function readPreferences(storage: Storage): Preferences {
     if (!parsed || typeof parsed !== 'object') return { ...defaults };
     const value = parsed as Record<string, unknown>;
     return {
-      theme: isTheme(value.theme) ? value.theme : defaults.theme,
       recentTools: cleanRecentTools(value.recentTools),
     };
   } catch {
@@ -44,7 +39,6 @@ export function readPreferences(storage: Storage): Preferences {
 
 export function writePreferences(storage: Storage, preferences: Preferences): void {
   const safe: Preferences = {
-    theme: isTheme(preferences.theme) ? preferences.theme : defaults.theme,
     recentTools: cleanRecentTools(preferences.recentTools),
   };
   try {

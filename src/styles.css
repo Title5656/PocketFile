@@ -1,18 +1,19 @@
 :root {
   font-family: "Noto Sans Thai", "Leelawadee UI", Tahoma, system-ui, sans-serif;
-  color: #182945;
-  background: #f4f7fc;
+  color: #edf3ff;
+  color-scheme: dark;
+  background: #0e1728;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
-  --page: #f4f7fc;
-  --surface: #ffffff;
-  --surface-soft: #f8faff;
-  --ink: #182945;
-  --muted: #6e7b91;
-  --line: #e6ebf3;
-  --primary: #315ed0;
-  --primary-dark: #214bb5;
+  --page: #0e1728;
+  --surface: #17243a;
+  --surface-soft: #1d2c45;
+  --ink: #edf3ff;
+  --muted: #a5b3ca;
+  --line: #2b3a54;
+  --primary: #80a4ff;
+  --primary-dark: #99b5ff;
   --shadow: 0 18px 45px rgba(25, 51, 97, .08);
   --shadow-soft: 0 6px 22px rgba(25, 51, 97, .06);
 }
@@ -411,3 +412,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 }
 .pdf-sign-overlay[aria-disabled="true"]{pointer-events:none;}
 .pdf-sign-overlay:focus-visible{outline:3px solid #5184ec;}
+
+/* Supplied dark logo lockup, with no redundant header controls. */
+.brand-mark { width:165px; height:54px; display:block; border-radius:0; box-shadow:none; }
+@media(max-width:600px){ .brand-mark { width:153px; height:50px; } }

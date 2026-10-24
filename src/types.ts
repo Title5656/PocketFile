@@ -11,7 +11,6 @@ export type ToolId =
   | 'print-layout';
 
 export type ToolCategory = 'image' | 'pdf';
-export type Theme = 'light' | 'dark';
 
 export interface ToolMeta {
   id: ToolId;
@@ -24,7 +23,6 @@ export interface ToolMeta {
 }
 
 export interface Preferences {
-  theme: Theme;
   recentTools: ToolId[];
 }
 

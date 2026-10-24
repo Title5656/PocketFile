@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+<title id="title">PocketFile logo</title>
+<desc id="desc">A white document tucked inside a blue pocket, on a navy rounded square.</desc>
+<defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#173A73"/><stop offset="1" stop-color="#315ED0"/></linearGradient>
+  <linearGradient id="pocket" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7EA6FF"/><stop offset="1" stop-color="#4A7CF2"/></linearGradient>
+</defs>
+<rect width="512" height="512" rx="116" fill="url(#bg)"/>
+<path d="M512 55v210C425 205 415 94 512 55Z" fill="#7299FF" opacity=".10"/>
+<path d="M188 116H286L353 183V328H188c-8 0-14-6-14-14V130c0-8 6-14 14-14Z" fill="#F7FAFF"/>
+<path d="M286 116v54c0 8 6 14 14 14h53Z" fill="#BCD1FA"/>
+<path d="M214 217h93" stroke="#9BB5E9" stroke-width="13" stroke-linecap="round"/>
+<path d="M214 249h63" stroke="#9BB5E9" stroke-width="13" stroke-linecap="round"/>
+<path d="M127 267c0-15 12-25 27-21l93 29c6 2 12 2 18 0l93-29c15-4 27 6 27 21v87c0 24-19 43-43 43H170c-24 0-43-19-43-43v-87Z" fill="url(#pocket)"/>
+<path d="m149 248 100 31a23 23 0 0 0 14 0l100-31" stroke="#E8F1FF" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+<path d="M333 355h23" stroke="#BCD1FF" stroke-width="10" stroke-linecap="round"/>
+</svg>

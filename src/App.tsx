@@ -1,6 +1,5 @@
 import { lazy, Suspense, useMemo, useState, useEffect, useRef } from 'react';
 import { FileCheck2, Search, ShieldCheck, Sparkles, X } from 'lucide-react';
-import { Modal } from './components/Modal';
 import { AppHeader } from './components/AppHeader';
 import { ConfirmDialog } from './components/ConfirmDialog';
 import { ToolCard } from './components/ToolCard';
@@ -9,7 +8,7 @@ import { toolById, toolCatalog } from './data/tools';
 import { readPreferences, writePreferences } from './lib/preferences';
 import type { Preferences, ToolCategory, ToolId } from './types';
 
-const emptyPreferences: Preferences = { theme: 'light', recentTools: [] };
+const emptyPreferences: Preferences = { recentTools: [] };
 const ImageTools = lazy(() => import('./tools/ImageTools').then((module) => ({ default: module.ImageTools })));
 const PdfTools = lazy(() => import('./tools/PdfTools').then((module) => ({ default: module.PdfTools })));
 
@@ -50,7 +49,6 @@ export default function App() {
   const historyIndex=useRef(0);
   const restoreIndex=useRef<number|null>(null);
   const pendingIndex=useRef<number|null>(null);
-  const [showSettings, setShowSettings] = useState(false);
   const [confirmClearRecent, setConfirmClearRecent] = useState(false);
   const [hasToolWork, setHasToolWork] = useState(false);
   const [confirmLeaveTool, setConfirmLeaveTool] = useState(false);
@@ -109,10 +107,6 @@ export default function App() {
     setActiveToolId(toolId);
   };
 
-  const toggleTheme = () => {
-    updatePreferences({ ...preferences, theme: preferences.theme === 'light' ? 'dark' : 'light' });
-  };
-
   const clearRecentTools = () => {
     updatePreferences({ ...preferences, recentTools: [] });
     setConfirmClearRecent(false);
@@ -156,13 +150,8 @@ export default function App() {
   };
 
   return (
-    <div className="app-shell" data-theme={preferences.theme}>
-      <AppHeader
-        theme={preferences.theme}
-        onThemeToggle={toggleTheme}
-        onSettings={() => setShowSettings(true)}
-        onHome={returnHome}
-      />
+    <div className="app-shell" data-theme="dark">
+      <AppHeader onHome={returnHome} />
       {activeTool ? (
         <ToolWorkspace tool={activeTool} onBack={returnHome}>
           <Suspense fallback={<div className="workspace-start-card" role="status"><span>กำลังเตรียมเครื่องมือ…</span></div>}>
@@ -196,7 +185,7 @@ export default function App() {
             <div className="hero-art" aria-hidden="true">
               <div className="hero-art-orbit orbit-one" />
               <div className="hero-art-orbit orbit-two" />
-              <div className="hero-art-main"><img src={`${import.meta.env.BASE_URL}pocketfile.svg`} alt="" /></div>
+              <div className="hero-art-main"><img src={`${import.meta.env.BASE_URL}pocketfile-mark.svg`} alt="" /></div>
               <div className="floating-file floating-file--top"><span className="floating-dot" /> <span>image.jpg</span><b>−42%</b></div>
               <div className="floating-file floating-file--bottom"><FileCheck2 size={19} /><span>พร้อมดาวน์โหลด</span></div>
               <div className="hero-art-sparkle sparkle-a">✦</div><div className="hero-art-sparkle sparkle-b">✧</div>
@@ -238,28 +227,6 @@ export default function App() {
           </footer>
         </main>
       )}
-
-      {showSettings ? (
-        <Modal className="settings-dialog" labelledBy="settings-title" onClose={()=>setShowSettings(false)}>
-            <div className="settings-dialog-head">
-              <div><p className="eyebrow">YOUR PREFERENCES</p><h2 id="settings-title">ตั้งค่า PocketFile</h2></div>
-              <button className="icon-button" type="button" onClick={() => setShowSettings(false)} aria-label="ปิดหน้าต่าง"><X size={18} /></button>
-            </div>
-            <div className="settings-row">
-              <div><strong>ธีม</strong><small>เลือกโหมดที่สบายตา</small></div>
-              <div className="theme-choice">
-                <button className={preferences.theme === 'light' ? 'selected' : ''} type="button" onClick={() => updatePreferences({ ...preferences, theme: 'light' })}>สว่าง</button>
-                <button className={preferences.theme === 'dark' ? 'selected' : ''} type="button" onClick={() => updatePreferences({ ...preferences, theme: 'dark' })}>มืด</button>
-              </div>
-            </div>
-            <div className="settings-row">
-              <div><strong>ภาษา</strong><small>ภาษาหลักของแอป</small></div>
-              <span className="language-chip">ไทย</span>
-            </div>
-            <div className="settings-privacy"><ShieldCheck size={18} /><p>ไฟล์ของคุณทำงานในอุปกรณ์นี้ PocketFile ไม่เก็บไฟล์ รูปภาพ หรือเอกสารไว้ในบัญชีหรือเซิร์ฟเวอร์</p></div>
-            <button className="button button--primary settings-done" type="button" onClick={() => setShowSettings(false)}>เรียบร้อย</button>
-        </Modal>
-      ) : null}
 
       {confirmClearRecent ? (
         <ConfirmDialog

@@ -5,6 +5,10 @@ import jpeg from 'jpeg-js';
 import JSZip from 'jszip';
 import fs from 'node:fs/promises';
 
+// A sticky dark header can cover a scrolled PDF during locator screenshots.
+// Exclude that page chrome when comparing document pixels, without changing the app.
+const documentShot = {style:'.app-header { visibility: hidden !important; }'};
+
 function picture(name='photo.png'){
   const p=new PNG({width:160,height:120});
   for(let y=0;y<120;y++)for(let x=0;x<160;x++){let i=(y*160+x)*4;p.data[i]=x;p.data[i+1]=y;p.data[i+2]=180;p.data[i+3]=x<20?0:255;}
@@ -28,13 +32,14 @@ async function invalid(page,id){
 }
 function inkBounds(bytes){
   const p=PNG.sync.read(bytes);let left=p.width,top=p.height,right=-1,bottom=-1;
-  for(let y=0;y<p.height;y++)for(let x=0;x<p.width;x++){const i=(y*p.width+x)*4;
+  // The two-pixel frame is UI chrome; dark mode uses a blue-gray border like ink.
+  for(let y=2;y<p.height-2;y++)for(let x=2;x<p.width-2;x++){const i=(y*p.width+x)*4;
     if(p.data[i]<170&&p.data[i+2]>p.data[i]+20&&p.data[i+2]>p.data[i+1]+15&&p.data[i+2]<220){left=Math.min(left,x);right=Math.max(right,x);top=Math.min(top,y);bottom=Math.max(bottom,y);}}
   expect(right).toBeGreaterThan(left);return [left/p.width,top/p.height,right/p.width,bottom/p.height];
 }
 async function sameInk(page,before){
   await expect.poll(()=>page.locator('.signed-preview canvas').evaluate(c=>{const d=c.getContext('2d').getImageData(0,0,c.width,c.height).data;let n=0;for(let i=0;i<d.length;i+=4)if(d[i]<170&&d[i+2]>d[i]+20&&d[i+2]>d[i+1]+15&&d[i+2]<220)n++;return n;})).toBeGreaterThan(0);
-  const actual=inkBounds(await page.locator('.signed-preview .pdf-page-preview').screenshot());
+  const actual=inkBounds(await page.locator('.signed-preview .pdf-page-preview').screenshot(documentShot));
   actual.forEach((v,i)=>expect(Math.abs(v-before[i])).toBeLessThan(.02));
 }
 test.beforeEach(async({page})=>{
@@ -106,7 +111,7 @@ test('sign: continuous captured drag, keyboard movement, page-specific output an
   await page.mouse.move(before.x-60+before.width/2,before.y-40+before.height/2,{steps:30});await page.mouse.up();
   const after=await sign.boundingBox();expect(after.x).toBeLessThan(before.x-40);expect(after.y).toBeLessThan(before.y-20);
   await sign.focus();await page.keyboard.press('ArrowLeft');
-  const expectedInk=inkBounds(await page.locator('.sign-preview-column .pdf-page-preview').screenshot());
+  const expectedInk=inkBounds(await page.locator('.sign-preview-column .pdf-page-preview').screenshot(documentShot));
   await page.getByRole('button',{name:'บันทึก PDF ที่เซ็นแล้ว',exact:true}).click();
   await expect(page.getByText('ตัวอย่าง PDF ผลลัพธ์ • หน้า 2',{exact:true})).toBeVisible();
   const d=await PDFDocument.load(await exported(page));expect(d.getPageCount()).toBe(2);expect(d.getPage(1).getRotation().angle).toBe(90);expect(d.getPage(1).node.Resources().toString()).toContain('XObject');
@@ -117,7 +122,7 @@ for(const rotation of [0,180,270])test(`signature pixels match the editor at ${r
   const box=await page.locator('.signature-canvas').boundingBox();
   await page.mouse.move(box.x+30,box.y+20);await page.mouse.down();await page.mouse.move(box.x+100,box.y+55,{steps:10});await page.mouse.up();
   await page.getByRole('button',{name:'วางลายเซ็นหน้านี้',exact:true}).click();
-  const before=inkBounds(await page.locator('.sign-preview-column .pdf-page-preview').screenshot());
+  const before=inkBounds(await page.locator('.sign-preview-column .pdf-page-preview').screenshot(documentShot));
   await page.getByRole('button',{name:'บันทึก PDF ที่เซ็นแล้ว',exact:true}).click();
   await exported(page);await sameInk(page,before);
 });
@@ -133,9 +138,11 @@ test('navigation, removed tools, keyboard modal focus, 320px layout and asset pa
   await page.goto('./');await expect(page.locator('.tool-grid .tool-card')).toHaveCount(8);
   await expect(page.getByRole('button',{name:/ดึงข้อความจากภาพ|ล้างข้อมูลรูปภาพ/})).toHaveCount(0);
   await page.keyboard.press('Control+k');await expect(page.getByRole('searchbox')).toBeFocused();
-  const settings=page.getByRole('button',{name:'ตั้งค่า',exact:true});await settings.click();await expect(page.getByRole('button',{name:'ปิดหน้าต่าง',exact:true})).toBeFocused();await page.keyboard.press('Shift+Tab');await expect(page.getByRole('button',{name:'เรียบร้อย',exact:true})).toBeFocused();await page.keyboard.press('Escape');await expect(settings).toBeFocused();
+  await expect(page.locator('.app-shell')).toHaveAttribute('data-theme','dark');
+  await expect(page.getByRole('button',{name:/^ตั้งค่า$|^สลับธีม$/})).toHaveCount(0);
+  await expect(page.getByText('ไฟล์อยู่บนอุปกรณ์',{exact:true})).toHaveCount(0);
   await page.getByRole('button',{name:/แปลงไฟล์รูปภาพ/}).click();await page.goBack();await expect(page.getByRole('searchbox')).toBeVisible();await page.goForward();await expect(page.getByLabel('เลือกไฟล์')).toBeAttached();
-  await upload(page,picture());await page.goBack();await expect(page.getByRole('alertdialog')).toBeVisible();await page.getByRole('button',{name:'ยกเลิก',exact:true}).click();await expect(page.getByLabel('แปลงเป็น')).toBeVisible();
+  await upload(page,picture());await page.goBack();await expect(page.getByRole('alertdialog')).toBeVisible();await expect(page.getByRole('button',{name:'ปิดหน้าต่าง',exact:true})).toBeFocused();await page.keyboard.press('Shift+Tab');await expect(page.getByRole('button',{name:'ออกจากเครื่องมือ',exact:true})).toBeFocused();await page.keyboard.press('Escape');await expect(page.getByLabel('แปลงเป็น')).toBeVisible();
   await page.goBack();await expect(page.getByRole('alertdialog')).toBeVisible();await page.getByRole('button',{name:'ออกจากเครื่องมือ',exact:true}).click();await expect(page.getByRole('searchbox')).toBeVisible();
   await page.goForward();await expect(page.getByLabel('เลือกไฟล์')).toBeAttached();
   await page.setViewportSize({width:320,height:800});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);

@@ -5,6 +5,15 @@ const appModules = import.meta.glob('./App.tsx', { eager: true }) as Record<stri
 
 describe('PocketFile home screen', () => {
 beforeEach(()=>{window.history.replaceState(null,'','/');});
+  it('uses dark mode even with a saved light preference and removes header settings', () => {
+    localStorage.setItem('pocketfile.preferences', JSON.stringify({theme:'light',recentTools:[]}));
+    const App=appModules['./App.tsx']!.default!;
+    const {container}=render(<App/>);
+    expect(container.querySelector('.app-shell')).toHaveAttribute('data-theme','dark');
+    expect(screen.queryByRole('button',{name:'ตั้งค่า'})).not.toBeInTheDocument();
+    expect(screen.queryByRole('button',{name:'สลับธีม'})).not.toBeInTheDocument();
+    expect(screen.queryByText('ไฟล์อยู่บนอุปกรณ์')).not.toBeInTheDocument();
+  });
   it('shows the file tools, device privacy promise, and tool search', () => {
     const App = appModules['./App.tsx']?.default;
     expect(App).toBeDefined();

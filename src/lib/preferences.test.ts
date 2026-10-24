@@ -28,16 +28,16 @@ describe('local preferences', () => {
     if (typeof module?.readPreferences !== 'function') return;
     const readPreferences = module.readPreferences as (storage: Storage) => unknown;
 
-    expect(readPreferences(createStorage())).toEqual({ theme: 'light', recentTools: [] });
-    expect(readPreferences(createStorage('{broken'))).toEqual({ theme: 'light', recentTools: [] });
+    expect(readPreferences(createStorage())).toEqual({ recentTools: [] });
+    expect(readPreferences(createStorage('{broken'))).toEqual({ recentTools: [] });
     expect(readPreferences(createStorage(JSON.stringify({
       theme: 'dark',
       recentTools: ['merge-pdf', 'compress', 'merge-pdf', 'not-a-tool', 'image-text', 'sign', 'batch'],
       files: ['should never persist'],
-    })))).toEqual({ theme: 'dark', recentTools: ['merge-pdf', 'compress', 'sign', 'batch'] });
+    })))).toEqual({ recentTools: ['merge-pdf', 'compress', 'sign', 'batch'] });
   });
 
-  it('stores only theme and recent tool IDs', () => {
+  it('stores only recent tool IDs, ignoring legacy theme and private file data', () => {
     const module = preferenceModules['./preferences.ts'];
     expect(typeof module?.writePreferences).toBe('function');
     if (typeof module?.writePreferences !== 'function') return;
@@ -47,7 +47,6 @@ describe('local preferences', () => {
     writePreferences(storage, { theme: 'dark', recentTools: ['compress'], selectedFile: 'private.png' });
 
     expect(JSON.parse(storage.getItem('pocketfile.preferences') ?? 'null')).toEqual({
-      theme: 'dark',
       recentTools: ['compress'],
     });
   });

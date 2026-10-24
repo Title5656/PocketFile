@@ -6,7 +6,7 @@ All file processing stays in the browser. The site and source are public; this i
 ## Eight tools
 
 Compress images, convert images, batch resize/convert with ZIP download, ID photos with DPI, merge PDFs, organize PDF pages, visible PDF signatures, and A4 N-up print layouts.
-OCR and image privacy/redaction were removed at the owner's request on 2026-10-24, including their dependencies and OCR worker/model requests. Existing logo artwork is preserved.
+OCR and image privacy/redaction were removed at the owner's request on 2026-10-24, including their dependencies and OCR worker/model requests. The supplied PocketFile Logo Kit is used for the header, hero, favicon and app icons. The interface is dark-only and Thai-only; theme/language/settings controls are removed.
 
 ## Run and verify (Node.js 24)
 
@@ -36,7 +36,7 @@ E2E starts the production preview on http://127.0.0.1:4275/PocketFile/, drives i
 
 ## Privacy and offline
 
-Only theme and recent tool IDs persist in local storage. Removed-tool IDs are filtered. User files stay in memory and are not uploaded or cached by the PWA. The app shell and static engines are cached after the first online visit; cached image/PDF features can work offline subject to browser storage. Production source maps are disabled. PDF and HEIC engines remain lazy chunks. No accounts, backend, database, cloud processing, telemetry, analytics, advertising or subscriptions.
+Only recent tool IDs persist in local storage; any legacy theme choice is ignored. Removed-tool IDs are filtered. User files stay in memory and are not uploaded or cached by the PWA. The app shell and static engines are cached after the first online visit; cached image/PDF features can work offline subject to browser storage. Production source maps are disabled. PDF and HEIC engines remain lazy chunks. No accounts, backend, database, cloud processing, telemetry, analytics, advertising or subscriptions.
 
 ## GitHub Pages: zero hosting cost
 

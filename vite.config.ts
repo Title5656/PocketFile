@@ -8,19 +8,19 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['pocketfile.svg', 'pocketfile-192.png', 'pocketfile-512.png'],
+      includeAssets: ['pocketfile-mark.svg', 'pocketfile-logo-dark.svg', 'pocketfile-32.png', 'pocketfile-64.png', 'pocketfile-192.png', 'pocketfile-512.png'],
       manifest: {
         name: 'PocketFile — เครื่องมือจัดการไฟล์ส่วนตัว',
         short_name: 'PocketFile',
         description: 'เครื่องมือรูปภาพและ PDF ที่ประมวลผลบนอุปกรณ์ของคุณ',
         lang: 'th',
-        theme_color: '#f5f8ff',
-        background_color: '#f5f8ff',
+        theme_color: '#0e1728',
+        background_color: '#0e1728',
         display: 'standalone',
         start_url: './',
         scope: './',
         icons: [
-          { src: 'pocketfile.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any maskable' },
+          { src: 'pocketfile-mark.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any maskable' },
           { src: 'pocketfile-192.png', sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
           { src: 'pocketfile-512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' },
         ],
