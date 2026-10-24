@@ -53,36 +53,6 @@ PocketFile คือเว็บไซต์เครื่องมือจั
 - การยกเลิกหยุดงานที่จุดพักถัดไป ขั้นตอนถอดรหัสหรือส่งออกที่เริ่มแล้วอาจทำงานต่อจนจบก่อนปลดล็อกให้เริ่มงานใหม่
 - ไฟล์ใหญ่ยังใช้หน่วยความจำของเครื่อง แม้อยู่ในขีดจำกัด ไม่ได้รับรองการทำงานกับทุกไฟล์หรือทุกอุปกรณ์ และยังไม่ได้ทดสอบ Safari/iPhone/Android บนอุปกรณ์จริงอย่างครบถ้วน
 
-<details>
-<summary>🛠️ สำหรับผู้พัฒนา — รัน ทดสอบ และ deploy</summary>
-
-โปรเจกต์ใช้ React, TypeScript และ Vite โดยประมวลผลไฟล์ฝั่งเบราว์เซอร์ ใช้ **Node.js 24** และ npm สำหรับพัฒนา
-
-```sh
-git clone https://github.com/Title5656/PocketFile.git
-cd PocketFile
-npm ci
-npm run dev
-```
-
-เปิด URL ที่ Vite แสดงใน terminal เมื่อต้องการตรวจสอบและสร้างไฟล์ production:
-
-```sh
-npm test
-npm run typecheck
-npm run build
-npx playwright install chromium --only-shell
-npm run test:e2e
-npm audit --audit-level=high
-```
-
-- ไฟล์ production อยู่ใน `dist/` และเปิดตรวจได้ด้วย `npm run preview`
-- E2E ใช้ Chromium กับ production preview ที่ `http://127.0.0.1:4275/PocketFile/` ทดสอบเลือกไฟล์ ประมวลผล ดาวน์โหลด และเปิดตรวจผลลัพธ์จริง
-- โฮสต์ผ่าน GitHub Pages โดยใช้ path **`/PocketFile/`** ซึ่งต้องตรงตัวพิมพ์ใหญ่–เล็ก ตั้งค่า Pages source เป็น **GitHub Actions**
-- เมื่อพุชขึ้น `main` workflow จะรัน tests, typecheck, build, dependency audit และ E2E ก่อน deploy โดยใช้ public repository และ runner มาตรฐาน `ubuntu-latest` ไม่ต้องมี backend โดเมนเสียเงิน หรือบริการโฮสต์เพิ่มเติม
-- ดูรายละเอียดผลตรวจและข้อจำกัดเพิ่มเติมได้ใน [รายงาน QA](docs/QA-2026-10-24.md) เอกสารออกแบบเก่าบางฉบับอธิบายฟีเจอร์รุ่นก่อนหน้า; README นี้อธิบายการใช้งานปัจจุบัน
-
-</details>
 
 ## 🔗 ลิงก์
 
