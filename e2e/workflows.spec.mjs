@@ -97,8 +97,12 @@ test('sign: continuous captured drag, keyboard movement, page-specific output an
   const ink=page.locator('.signature-canvas');await expect(ink).toBeVisible();const box=await ink.boundingBox();
   await page.mouse.move(box.x+20,box.y+30);await page.mouse.down();await page.mouse.move(box.x+90,box.y+50,{steps:12});await page.mouse.up();
   await page.getByRole('button',{name:'หน้าถัดไป',exact:true}).click();await page.getByRole('button',{name:'วางลายเซ็นหน้านี้',exact:true}).click();
-  const sign=page.locator('.pdf-sign-overlay');const before=await sign.boundingBox();
+  const sign=page.locator('.pdf-sign-overlay');
+  await expect.poll(()=>sign.evaluate(img=>img.complete&&img.naturalWidth>0)).toBe(true);
+  await sign.scrollIntoViewIfNeeded();
+  const before=await sign.boundingBox();
   await page.mouse.move(before.x+before.width/2,before.y+before.height/2);await page.mouse.down();
+  await expect.poll(()=>sign.evaluate(img=>img.hasPointerCapture(1))).toBe(true);
   await page.mouse.move(before.x-60+before.width/2,before.y-40+before.height/2,{steps:30});await page.mouse.up();
   const after=await sign.boundingBox();expect(after.x).toBeLessThan(before.x-40);expect(after.y).toBeLessThan(before.y-20);
   await sign.focus();await page.keyboard.press('ArrowLeft');
