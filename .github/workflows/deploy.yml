@@ -28,7 +28,13 @@ jobs:
       - name: Install dependencies
         run: npm ci
       - name: Run tests and build
-        run: npm test && npm run build
+        run: npm test && npm run typecheck && npm run build
+      - name: Check dependencies
+        run: npm audit --audit-level=high
+      - name: Set up Chromium for browser checks
+        run: npx playwright install --with-deps chromium --only-shell
+      - name: Verify real file workflows
+        run: npm run test:e2e
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:

@@ -1,52 +1,47 @@
 # PocketFile
 
-PocketFile is a Thai-first, browser-only file utility. Image and PDF contents are processed on the device; the app has no account, upload endpoint, backend, or cloud storage.
+Thai-first personal image/PDF utilities: https://title5656.github.io/PocketFile/
+All file processing stays in the browser. The site and source are public; this is not access-controlled storage.
 
-## Run locally
+## Eight tools
 
-Use Node.js 24 and npm:
+Compress images, convert images, batch resize/convert with ZIP download, ID photos with DPI, merge PDFs, organize PDF pages, visible PDF signatures, and A4 N-up print layouts.
+OCR and image privacy/redaction were removed at the owner's request on 2026-10-24, including their dependencies and OCR worker/model requests. Existing logo artwork is preserved.
 
-```sh
+## Run and verify (Node.js 24)
+
+~~~sh
 npm ci
 npm run dev
-```
-
-Open the local URL printed by Vite. The pre-dev step copies the Tesseract worker and WebAssembly runtime from the installed packages into `public/ocr/`.
-
-## Test and build
-
-```sh
 npm test
 npm run typecheck
 npm run build
-npm run preview
-```
+npx playwright install chromium --only-shell
+npm run test:e2e
+npm audit --audit-level=high
+~~~
 
-The production files are written to `dist/`. `npm run build` prepares the OCR runtime before running TypeScript and Vite.
+E2E starts the production preview on http://127.0.0.1:4275/PocketFile/, drives isolated Chromium, downloads files and reopens PNG/JPEG/ZIP/PDF output. It compares signature ink in the editor and actual rendered PDF, including rotations and CropBox offsets. It also covers keyboard navigation, a narrow viewport and cached offline conversion. Restricted Windows sandboxes need browser write permissions and an accessible persistent PLAYWRIGHT_BROWSERS_PATH. Test artifacts are ignored by Git.
 
-## Deploy to GitHub Pages
+## Practical limits
 
-The repository is configured for the `PocketFile` repository path (`/PocketFile/`). Push the project to the `main` branch of a GitHub repository named `PocketFile`, then set the repository's Pages source to **GitHub Actions**. The workflow in `.github/workflows/deploy.yml` runs tests and builds the site before deploying `dist/`.
+- Images: 25 MB each, 40 megapixels, 12,000 px per side. Common PNG/JPEG/extended WebP dimension headers are checked before decode, and every decoded image is checked. HEIC/other variants may expose dimensions only after decoding; low-memory safety is not guaranteed for every file.
+- Image batches: 20 files, 100 MB total input and 100 MB total generated blobs. ZIP generation is serialized and errors are visible. Transient decode/archive buffers still consume memory.
+- PDFs: 50 MB each, 150 pages. Merge: 10 files, 100 MB combined input, 150 combined output pages. Large 500-page workloads are deliberately rejected.
+- ID photo custom size: 0.2–8 inches per side, subject to pixel caps. DPI metadata plus corresponding pixel dimensions do not override physical printer settings. Background replacement is not provided.
+- Cancellation is cooperative: discard results and stop at the next checkpoint. A native decode, canvas encode or PDF library operation already started may finish first. Controls remain locked until it settles; a new conflicting job cannot start in that workspace.
+- HEIC/HEIF depends on native decoding or the bundled fallback; some variants must be converted to JPG first. Physical Safari/iPhone/Android device coverage is not certified.
+- Quick Sign embeds a visible image stamp, not a certificate-backed digital signature. Drawing needs a pointer; placed marks can also move with arrow keys. Typed or uploaded signature authoring was not added.
+- Encrypted/damaged PDFs fail with guidance. Copying/embedding may not preserve all interactive forms, annotations, bookmarks or links; inspect important output before relying on those features.
 
-## Tools
+## Privacy and offline
 
-- Compress images to a target size, with dimensions and quality controls
-- Convert JPG, PNG, WebP, and supported HEIC/HEIF inputs
-- Resize and convert multiple images, with individual downloads or a ZIP
-- Crop an ID photo to common or custom sizes and embed the selected DPI in JPEG/PNG output
-- Recognize Thai and English text locally with Tesseract.js
-- Inspect supported EXIF fields, re-encode to remove metadata, and paint opaque redaction boxes into image pixels
-- Merge PDFs, reorder/remove/select pages, place image signatures, and create A4 N-up print layouts
+Only theme and recent tool IDs persist in local storage. Removed-tool IDs are filtered. User files stay in memory and are not uploaded or cached by the PWA. The app shell and static engines are cached after the first online visit; cached image/PDF features can work offline subject to browser storage. Production source maps are disabled. PDF and HEIC engines remain lazy chunks. No accounts, backend, database, cloud processing, telemetry, analytics, advertising or subscriptions.
 
-## Privacy and offline use
+## GitHub Pages: zero hosting cost
 
-Files remain in the browser during processing. Only theme and recent tool IDs are saved in local storage. OCR language data is stored in browser IndexedDB after download. The Tesseract worker and WASM runtime ship with the app; Thai and English language data must be downloaded the first time OCR runs, so OCR is not available offline until that cache exists. The app shell and static runtime assets are cached by the PWA service worker after the app is first loaded online.
+Keep the public repository, exact /PocketFile/ base, Settings → Pages → GitHub Actions, and standard ubuntu-latest runners. Pushes to main run unit tests, typecheck, build, dependency audit and Chromium E2E before deploying dist/. No paid runners, custom domain or external hosting are needed.
 
-## Limits
+GitHub documents this free configuration in https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages and https://docs.github.com/en/actions/concepts/billing-and-usage .
 
-- Browser canvas exports are capped at 40 megapixels and 12,000 pixels on either side to reduce memory failures.
-- HEIC/HEIF support depends on the browser decoder or the bundled fallback; a specific image may still fail to decode.
-- The ID-photo tool crops and sizes an image. It does not replace the background.
-- Quick Sign embeds a visible signature image. It is not a certificate-backed digital signature.
-- Password-protected or damaged PDFs may not open. PDF.js and pdf-lib support varies by PDF features and browser memory.
-- Safari-specific behavior has not been verified in this Windows environment.
+See [the personal QA matrix](docs/QA-2026-10-24.md). Historical specs/plans describe earlier requirements; this README and the latest owner request define current behavior.
